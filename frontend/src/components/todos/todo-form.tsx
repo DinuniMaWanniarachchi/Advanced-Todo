@@ -36,16 +36,18 @@ export function TodoForm({ onSubmit, onCancel, editingTodo }: TodoFormProps) {
   };
 
   return (
-    <div className="space-y-4 p-4 border rounded-xl bg-white">
+    <div className="space-y-4 p-4 border rounded-xl bg-white dark:bg-gray-900">
       <Input
         placeholder="Todo title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        className="text-black dark:text-white bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
       />
       <Textarea
         placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
+        className="text-black dark:text-white bg-white dark:bg-gray-800 placeholder:text-gray-500 dark:placeholder:text-gray-400"
       />
       <div className="flex gap-2 justify-end">
         <Button variant="outline" onClick={onCancel}>
