@@ -8,6 +8,15 @@ import { Plus } from 'lucide-react';
 import { TodoForm } from '@/components/todos/todo-form';
 import { TodoList } from '@/components/todos/todo-list';
 
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerClose,
+  DrawerBody,
+} from '@/components/ui/drawer';
+
 export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
@@ -42,7 +51,7 @@ export default function TodosPage() {
           title: todo.title,
           description: todo.description,
           completed: todo.completed,
-          priority: todo.priority, // <-- Important to add this here!
+          priority: todo.priority,
         });
         setTodos((prev) =>
           prev.map((t) => (t.id === todo.id ? res.data : t))
@@ -58,6 +67,7 @@ export default function TodosPage() {
         setTodos((prev) => [res.data, ...prev]);
       }
 
+      // Close drawer & reset editing todo
       setIsFormOpen(false);
       setEditingTodo(null);
     } catch (error) {
@@ -101,23 +111,13 @@ export default function TodosPage() {
         <h1 className="text-3xl font-bold text-gray-900">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
-        <Button onClick={() => setIsFormOpen(true)} className="flex gap-2">
+        <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
           <Plus className="h-4 w-4" />
           New Todo
         </Button>
       </div>
 
-      {isFormOpen && (
-        <TodoForm
-          onSubmit={handleAddOrUpdate}
-          onCancel={() => {
-            setIsFormOpen(false);
-            setEditingTodo(null);
-          }}
-          editingTodo={editingTodo}
-        />
-      )}
-
+      {/* Todo List */}
       <div className="mt-6">
         <TodoList
           todos={todos}
@@ -126,6 +126,27 @@ export default function TodosPage() {
           onDelete={handleDelete}
         />
       </div>
+
+      {/* Drawer for TodoForm */}
+      <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DrawerContent position="right" className="max-w-md">
+          <DrawerHeader>
+            <DrawerTitle>{editingTodo ? 'Edit Todo' : 'New Todo'}</DrawerTitle>
+            <DrawerClose />
+          </DrawerHeader>
+          <DrawerBody>
+            <TodoForm
+              editingTodo={editingTodo}
+              onSubmit={handleAddOrUpdate}
+              onCancel={() => setIsFormOpen(false)}
+            />
+          </DrawerBody>
+          {/* Optional DrawerFooter if you want */}
+          {/* <DrawerFooter>
+            // Custom footer buttons here
+          </DrawerFooter> */}
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
