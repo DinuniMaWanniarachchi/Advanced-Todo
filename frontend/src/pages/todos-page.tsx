@@ -105,6 +105,12 @@ export default function TodosPage() {
     }
   };
 
+  // Priority sorting: High -> Medium -> Low
+  const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+  const sortedTodos = todos.slice().sort((a, b) => {
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
+  });
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -120,7 +126,7 @@ export default function TodosPage() {
       {/* Todo List */}
       <div className="mt-6">
         <TodoList
-          todos={todos}
+          todos={sortedTodos}
           onToggle={handleToggle}
           onEdit={handleEdit}
           onDelete={handleDelete}
