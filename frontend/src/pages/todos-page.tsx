@@ -108,7 +108,7 @@ export default function TodosPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
         <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
@@ -141,10 +141,6 @@ export default function TodosPage() {
               onCancel={() => setIsFormOpen(false)}
             />
           </DrawerBody>
-          {/* Optional DrawerFooter if you want */}
-          {/* <DrawerFooter>
-            // Custom footer buttons here
-          </DrawerFooter> */}
         </DrawerContent>
       </Drawer>
     </div>
