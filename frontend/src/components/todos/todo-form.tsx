@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Todo } from '@/types';
 
 interface TodoFormProps {
-  onSubmit: (todo: Todo) => void;
+  onSubmit: (todo: Partial<Todo>) => void;
   onCancel: () => void;
   editingTodo: Todo | null;
 }
@@ -23,15 +23,14 @@ export function TodoForm({ onSubmit, onCancel, editingTodo }: TodoFormProps) {
 
   const handleSubmit = () => {
     if (!title.trim()) return;
+
     onSubmit({
-        id: editingTodo?.id ?? Date.now(),
-        title,
-        description,
-        completed: editingTodo?.completed ?? false,
-        project_id: 0,
-        created_at: '',
-        updated_at: ''
+      id: editingTodo?.id,
+      title,
+      description,
+      completed: editingTodo?.completed ?? false,
     });
+
     setTitle('');
     setDescription('');
   };
