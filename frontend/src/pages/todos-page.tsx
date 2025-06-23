@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TodoForm } from '@/components/todos/todo-form';
 import { TodoList } from '@/components/todos/todo-list';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,11 +18,16 @@ export default function TodosPage() {
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
 
   useEffect(() => {
+    // Load project name
     axios
       .get(`http://localhost:5000/api/projects/${projectId}`)
       .then((res) => setProjectName(res.data.name))
-      .catch(() => setProjectName(`Project #${projectId}`));
+      .catch((err) => {
+        console.error('❌ Failed to load project:', err);
+        setProjectName(`Project #${projectId}`);
+      });
 
+    // Load todos
     axios
       .get(`http://localhost:5000/api/todos/project/${projectId}`)
       .then((res) => setTodos(res.data))
@@ -33,20 +37,27 @@ export default function TodosPage() {
   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
     try {
       if (todo.id) {
+        // Update existing todo, including priority
         const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
           title: todo.title,
           description: todo.description,
           completed: todo.completed,
+          priority: todo.priority, // <-- Important to add this here!
         });
-        setTodos((prev) => prev.map((t) => (t.id === todo.id ? res.data : t)));
+        setTodos((prev) =>
+          prev.map((t) => (t.id === todo.id ? res.data : t))
+        );
       } else {
+        // Create new todo, including priority with default
         const res = await axios.post(`http://localhost:5000/api/todos`, {
           title: todo.title,
           description: todo.description,
           project_id: projectId,
+          priority: todo.priority || 'Medium',
         });
         setTodos((prev) => [res.data, ...prev]);
       }
+
       setIsFormOpen(false);
       setEditingTodo(null);
     } catch (error) {
@@ -62,7 +73,9 @@ export default function TodosPage() {
       const res = await axios.put(`http://localhost:5000/api/todos/${id}`, {
         completed: !todo.completed,
       });
-      setTodos((prev) => prev.map((t) => (t.id === id ? res.data : t)));
+      setTodos((prev) =>
+        prev.map((t) => (t.id === id ? res.data : t))
+      );
     } catch (error) {
       console.error('❌ Error toggling todo:', error);
     }
@@ -85,17 +98,13 @@ export default function TodosPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl font-bold text-gray-900">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
-
-        <div className="flex items-center gap-4">
-          <Button onClick={() => setIsFormOpen(true)} className="flex gap-2">
-            <Plus className="h-4 w-4" />
-            New Todo
-          </Button>
-          <ThemeToggle />
-        </div>
+        <Button onClick={() => setIsFormOpen(true)} className="flex gap-2">
+          <Plus className="h-4 w-4" />
+          New Todo
+        </Button>
       </div>
 
       {isFormOpen && (

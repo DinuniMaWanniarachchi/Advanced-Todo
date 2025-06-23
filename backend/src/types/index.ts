@@ -12,6 +12,7 @@ export interface Todo {
   description?: string;
   completed: boolean;
   project_id: number;
+  priority: 'High' | 'Medium' | 'Low';  // Added priority here
   created_at: Date;
   updated_at: Date;
 }
@@ -30,10 +31,12 @@ export interface CreateTodoRequest {
   title: string;
   description?: string;
   project_id: number;
+  priority?: 'High' | 'Medium' | 'Low';  // Added priority here (optional for creation)
 }
 
 export interface UpdateTodoRequest {
   title?: string;
   description?: string;
   completed?: boolean;
+  priority?: 'High' | 'Medium' | 'Low';  // Added priority here (optional for update)
 }

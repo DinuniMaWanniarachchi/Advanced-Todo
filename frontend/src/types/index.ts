@@ -14,6 +14,7 @@ export interface Todo {
   project_id: number;
   created_at: string;
   updated_at: string;
+  priority?: 'High' | 'Medium' | 'Low';
 }
 
 export interface CreateProjectRequest {

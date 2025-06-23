@@ -19,8 +19,22 @@ interface TodoListProps {
 
 export function TodoList({ todos, onToggle, onEdit, onDelete }: TodoListProps) {
   if (todos.length === 0) {
-    return <div className="text-center text-gray-500">No todos yet.</div>;
+    return <div className="text-center text-gray-500 dark:text-gray-400">No todos yet.</div>;
   }
+
+  // Optional: Style priority with colors
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case 'High':
+        return 'text-red-500 font-semibold';
+      case 'Medium':
+        return 'text-yellow-500 font-medium';
+      case 'Low':
+        return 'text-green-500';
+      default:
+        return 'text-gray-500';
+    }
+  };
 
   return (
     <Table>
@@ -29,6 +43,7 @@ export function TodoList({ todos, onToggle, onEdit, onDelete }: TodoListProps) {
           <TableHead className="w-[80px]">Done</TableHead>
           <TableHead>Title</TableHead>
           <TableHead>Description</TableHead>
+          <TableHead>Priority</TableHead>
           <TableHead className="text-right w-[120px]">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -49,12 +64,19 @@ export function TodoList({ todos, onToggle, onEdit, onDelete }: TodoListProps) {
                 )}
               </Button>
             </TableCell>
-            <TableCell className={todo.completed ? 'line-through text-gray-500' : ''}>
+
+            <TableCell className={todo.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}>
               {todo.title}
             </TableCell>
-            <TableCell className={todo.completed ? 'line-through text-gray-500' : ''}>
+
+            <TableCell className={todo.completed ? 'line-through text-gray-500 dark:text-gray-400' : ''}>
               {todo.description}
             </TableCell>
+
+            <TableCell className={getPriorityColor(todo.priority)}>
+              {todo.priority || '—'}
+            </TableCell>
+
             <TableCell className="text-right space-x-2">
               <Button
                 variant="ghost"
