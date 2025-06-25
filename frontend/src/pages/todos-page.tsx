@@ -44,6 +44,7 @@ export default function TodosPage() {
 
   // Debounce search input updates
   // useCallback to avoid recreation on every render
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSetSearchTerm = useCallback(
     debounce((value: string) => {
       setDebouncedSearchTerm(value);
