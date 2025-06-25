@@ -1,13 +1,171 @@
+// import { useParams } from 'react-router-dom';
+// import { useState, useEffect } from 'react';
+// import axios from 'axios';
+
+// import type { Todo } from '@/types';
+// import { Button } from '@/components/ui/button';
+// import { Plus } from 'lucide-react';
+// import { TodoForm } from '@/components/todos/todo-form';
+// import { TodoList } from '@/components/todos/todo-list';
+
+// import {
+//   Drawer,
+//   DrawerContent,
+//   DrawerHeader,
+//   DrawerTitle,
+//   DrawerClose,
+//   DrawerBody,
+// } from '@/components/ui/drawer';
+
+// export default function TodosPage() {
+//   const { id } = useParams<{ id: string }>();
+//   const projectId = Number(id);
+
+//   const [projectName, setProjectName] = useState<string>('');
+//   const [todos, setTodos] = useState<Todo[]>([]);
+//   const [isFormOpen, setIsFormOpen] = useState(false);
+//   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+
+//   useEffect(() => {
+//     // Load project name
+//     axios
+//       .get(`http://localhost:5000/api/projects/${projectId}`)
+//       .then((res) => setProjectName(res.data.name))
+//       .catch((err) => {
+//         console.error('❌ Failed to load project:', err);
+//         setProjectName(`Project #${projectId}`);
+//       });
+
+//     // Load todos
+//     axios
+//       .get(`http://localhost:5000/api/todos/project/${projectId}`)
+//       .then((res) => setTodos(res.data))
+//       .catch((err) => console.error('❌ Failed to load todos:', err));
+//   }, [projectId]);
+
+//   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
+//     try {
+//       if (todo.id) {
+//         // Update existing todo, including priority
+//         const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
+//           title: todo.title,
+//           description: todo.description,
+//           completed: todo.completed,
+//           priority: todo.priority,
+//         });
+//         setTodos((prev) =>
+//           prev.map((t) => (t.id === todo.id ? res.data : t))
+//         );
+//       } else {
+//         // Create new todo, including priority with default
+//         const res = await axios.post(`http://localhost:5000/api/todos`, {
+//           title: todo.title,
+//           description: todo.description,
+//           project_id: projectId,
+//           priority: todo.priority || 'Medium',
+//         });
+//         setTodos((prev) => [res.data, ...prev]);
+//       }
+
+//       // Close drawer & reset editing todo
+//       setIsFormOpen(false);
+//       setEditingTodo(null);
+//     } catch (error) {
+//       console.error('❌ Error saving todo:', error);
+//     }
+//   };
+
+//   const handleToggle = async (id: number) => {
+//     const todo = todos.find((t) => t.id === id);
+//     if (!todo) return;
+
+//     try {
+//       const res = await axios.put(`http://localhost:5000/api/todos/${id}`, {
+//         completed: !todo.completed,
+//       });
+//       setTodos((prev) =>
+//         prev.map((t) => (t.id === id ? res.data : t))
+//       );
+//     } catch (error) {
+//       console.error('❌ Error toggling todo:', error);
+//     }
+//   };
+
+//   const handleEdit = (todo: Todo) => {
+//     setEditingTodo(todo);
+//     setIsFormOpen(true);
+//   };
+
+//   const handleDelete = async (id: number) => {
+//     try {
+//       await axios.delete(`http://localhost:5000/api/todos/${id}`);
+//       setTodos((prev) => prev.filter((t) => t.id !== id));
+//     } catch (error) {
+//       console.error('❌ Error deleting todo:', error);
+//     }
+//   };
+
+//   // Priority sorting: High -> Medium -> Low
+//   const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+//   const sortedTodos = todos.slice().sort((a, b) => {
+//     return priorityOrder[a.priority] - priorityOrder[b.priority];
+//   });
+
+//   return (
+//     <div className="container mx-auto px-4 py-8">
+//       <div className="flex justify-between items-center mb-6">
+//         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+//           Todos for Project: {projectName || `#${projectId}`}
+//         </h1>
+//         <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
+//           <Plus className="h-4 w-4" />
+//           New Todo
+//         </Button>
+//       </div>
+
+//       {/* Todo List */}
+//       <div className="mt-6">
+//         <TodoList
+//           todos={sortedTodos}
+//           onToggle={handleToggle}
+//           onEdit={handleEdit}
+//           onDelete={handleDelete}
+//         />
+//       </div>
+
+//       {/* Drawer for TodoForm */}
+//       <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
+//         <DrawerContent position="right" className="max-w-md">
+//           <DrawerHeader>
+//             <DrawerTitle>{editingTodo ? 'Edit Todo' : 'New Todo'}</DrawerTitle>
+//             <DrawerClose />
+//           </DrawerHeader>
+//           <DrawerBody>
+//             <TodoForm
+//               editingTodo={editingTodo}
+//               onSubmit={handleAddOrUpdate}
+//               onCancel={() => setIsFormOpen(false)}
+//             />
+//           </DrawerBody>
+//         </DrawerContent>
+//       </Drawer>
+//     </div>
+//   );
+// }
+
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '@/app/store';
+import { setTodos, addTodo, updateTodo, deleteTodo } from '@/components/todos/todoSlice';
 
 import type { Todo } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { TodoForm } from '@/components/todos/todo-form';
 import { TodoList } from '@/components/todos/todo-list';
-
 import {
   Drawer,
   DrawerContent,
@@ -21,53 +179,46 @@ export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
 
-  const [projectName, setProjectName] = useState<string>('');
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const dispatch: AppDispatch = useDispatch();
+  const todos = useSelector((state: RootState) => state.todos.todos);
+
+  const [projectName, setProjectName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
 
   useEffect(() => {
-    // Load project name
     axios
       .get(`http://localhost:5000/api/projects/${projectId}`)
       .then((res) => setProjectName(res.data.name))
-      .catch((err) => {
-        console.error('❌ Failed to load project:', err);
-        setProjectName(`Project #${projectId}`);
-      });
+      .catch(() => setProjectName(`Project #${projectId}`));
 
-    // Load todos
     axios
       .get(`http://localhost:5000/api/todos/project/${projectId}`)
-      .then((res) => setTodos(res.data))
+      .then((res) => dispatch(setTodos(res.data)))
       .catch((err) => console.error('❌ Failed to load todos:', err));
-  }, [projectId]);
+  }, [projectId, dispatch]);
 
   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
     try {
       if (todo.id) {
-        // Update existing todo, including priority
+        // Update todo
         const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
           title: todo.title,
           description: todo.description,
           completed: todo.completed,
           priority: todo.priority,
         });
-        setTodos((prev) =>
-          prev.map((t) => (t.id === todo.id ? res.data : t))
-        );
+        dispatch(updateTodo(res.data));
       } else {
-        // Create new todo, including priority with default
+        // Add new todo
         const res = await axios.post(`http://localhost:5000/api/todos`, {
           title: todo.title,
           description: todo.description,
           project_id: projectId,
           priority: todo.priority || 'Medium',
         });
-        setTodos((prev) => [res.data, ...prev]);
+        dispatch(addTodo(res.data));
       }
-
-      // Close drawer & reset editing todo
       setIsFormOpen(false);
       setEditingTodo(null);
     } catch (error) {
@@ -83,9 +234,7 @@ export default function TodosPage() {
       const res = await axios.put(`http://localhost:5000/api/todos/${id}`, {
         completed: !todo.completed,
       });
-      setTodos((prev) =>
-        prev.map((t) => (t.id === id ? res.data : t))
-      );
+      dispatch(updateTodo(res.data));
     } catch (error) {
       console.error('❌ Error toggling todo:', error);
     }
@@ -99,17 +248,14 @@ export default function TodosPage() {
   const handleDelete = async (id: number) => {
     try {
       await axios.delete(`http://localhost:5000/api/todos/${id}`);
-      setTodos((prev) => prev.filter((t) => t.id !== id));
+      dispatch(deleteTodo(id));
     } catch (error) {
       console.error('❌ Error deleting todo:', error);
     }
   };
 
-  // Priority sorting: High -> Medium -> Low
   const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-  const sortedTodos = todos.slice().sort((a, b) => {
-    return priorityOrder[a.priority] - priorityOrder[b.priority];
-  });
+  const sortedTodos = todos.slice().sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -123,17 +269,10 @@ export default function TodosPage() {
         </Button>
       </div>
 
-      {/* Todo List */}
       <div className="mt-6">
-        <TodoList
-          todos={sortedTodos}
-          onToggle={handleToggle}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <TodoList todos={sortedTodos} onToggle={handleToggle} onEdit={handleEdit} onDelete={handleDelete} />
       </div>
 
-      {/* Drawer for TodoForm */}
       <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DrawerContent position="right" className="max-w-md">
           <DrawerHeader>
@@ -141,11 +280,7 @@ export default function TodosPage() {
             <DrawerClose />
           </DrawerHeader>
           <DrawerBody>
-            <TodoForm
-              editingTodo={editingTodo}
-              onSubmit={handleAddOrUpdate}
-              onCancel={() => setIsFormOpen(false)}
-            />
+            <TodoForm editingTodo={editingTodo} onSubmit={handleAddOrUpdate} onCancel={() => setIsFormOpen(false)} />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
