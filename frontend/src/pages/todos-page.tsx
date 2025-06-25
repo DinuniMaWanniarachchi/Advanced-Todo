@@ -1,6 +1,10 @@
+// src/components/todos/todos-page.tsx
+
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import debounce from 'lodash.debounce';
+import FocusTrap from 'focus-trap-react';
 
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/app/store';
@@ -20,9 +24,7 @@ import {
   DrawerBody,
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
-
-import FocusTrap from 'focus-trap-react';
-import debounce from 'lodash.debounce';
+import { todosApiService } from '@/api/todos.api.service';
 
 export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,16 +36,11 @@ export default function TodosPage() {
   const [projectName, setProjectName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Search states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-  // Debounce search input updates
-  // useCallback to avoid recreation on every render
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSetSearchTerm = useCallback(
     debounce((value: string) => {
@@ -61,22 +58,25 @@ export default function TodosPage() {
     setLoading(true);
     setError(null);
 
-    const fetchProject = axios.get(`http://localhost:5000/api/projects/${projectId}`);
-    const fetchTodos = axios.get(`http://localhost:5000/api/todos/project/${projectId}`);
+    const fetchData = async () => {
+      try {
+        const [projectRes, todosRes] = await Promise.all([
+          axios.get(`http://localhost:5000/api/projects/${projectId}`),
+          todosApiService.getByProject(projectId),
+        ]);
 
-    Promise.all([fetchProject, fetchTodos])
-      .then(([projectRes, todosRes]) => {
         setProjectName(projectRes.data.name);
-        dispatch(setTodos(todosRes.data));
+        dispatch(setTodos(todosRes));
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('❌ Failed to load data:', err);
         setError('Failed to load data. Please try again later.');
         setLoading(false);
-      });
+      }
+    };
 
-    // Cleanup debounce on unmount
+    fetchData();
+
     return () => {
       debouncedSetSearchTerm.cancel();
     };
@@ -84,27 +84,20 @@ export default function TodosPage() {
 
   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
     try {
+      let result: Todo;
+
       if (todo.id) {
-        const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
-          title: todo.title,
-          description: todo.description,
-          completed: todo.completed,
-          priority: todo.priority,
-        });
-        dispatch(updateTodo(res.data));
+        result = await todosApiService.update(todo.id, todo);
+        dispatch(updateTodo(result));
       } else {
-        const res = await axios.post(`http://localhost:5000/api/todos`, {
-          title: todo.title,
-          description: todo.description,
-          project_id: projectId,
-          priority: todo.priority || 'Medium',
-        });
-        dispatch(addTodo(res.data));
+        result = await todosApiService.create({ ...todo, project_id: projectId });
+        dispatch(addTodo(result));
       }
+
       setIsFormOpen(false);
       setEditingTodo(null);
-    } catch (error) {
-      console.error('❌ Error saving todo:', error);
+    } catch (err) {
+      console.error('❌ Error saving todo:', err);
     }
   };
 
@@ -113,12 +106,10 @@ export default function TodosPage() {
     if (!todo) return;
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/todos/${id}`, {
-        completed: !todo.completed,
-      });
-      dispatch(updateTodo(res.data));
-    } catch (error) {
-      console.error('❌ Error toggling todo:', error);
+      const updated = await todosApiService.update(id, { completed: !todo.completed });
+      dispatch(updateTodo(updated));
+    } catch (err) {
+      console.error('❌ Error toggling todo:', err);
     }
   };
 
@@ -129,44 +120,41 @@ export default function TodosPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:5000/api/todos/${id}`);
+      await todosApiService.remove(id);
       dispatch(deleteTodo(id));
-    } catch (error) {
-      console.error('❌ Error deleting todo:', error);
+    } catch (err) {
+      console.error('❌ Error deleting todo:', err);
     }
   };
 
-  const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+  // Priority order with string keys
+  const priorityOrder: Record<string, number> = { High: 1, Medium: 2, Low: 3 };
 
-  const sortedTodos = todos.slice().sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  // Sort todos safely by priority with fallback to 'Low'
+  const sortedTodos = Array.isArray(todos)
+    ? todos.slice().sort((a, b) => {
+        const aPriority = a.priority && priorityOrder[a.priority] ? a.priority : 'Low';
+        const bPriority = b.priority && priorityOrder[b.priority] ? b.priority : 'Low';
+        return priorityOrder[aPriority] - priorityOrder[bPriority];
+      })
+    : [];
 
-  const filteredTodos = sortedTodos.filter(todo =>
+  // Filter todos by debounced search term (case-insensitive)
+  const filteredTodos = sortedTodos.filter((todo) =>
     todo.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
     (todo.description?.toLowerCase() ?? '').includes(debouncedSearchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="text-center py-20">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-20 text-red-600">{error}</div>;
-  }
+  if (loading) return <div className="text-center py-20">Loading...</div>;
+  if (error) return <div className="text-center py-20 text-red-600">{error}</div>;
 
   return (
-    // Add inert effect by disabling pointer events and select when drawer open
     <div className={`container mx-auto px-4 py-8 ${isFormOpen ? 'pointer-events-none select-none' : ''}`}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
-        <Button
-          onClick={() => {
-            setIsFormOpen(true);
-            setEditingTodo(null);
-          }}
-          className="flex gap-2"
-        >
+        <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
           <Plus className="h-4 w-4" />
           New Todo
         </Button>
