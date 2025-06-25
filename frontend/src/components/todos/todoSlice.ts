@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { Todo } from '@/types'; // ✅ Always import the shared type
+import type { Todo } from '@/types'; 
 
 type TodoState = {
   todos: Todo[];
@@ -17,7 +17,7 @@ const todoSlice = createSlice({
       state.todos = action.payload;
     },
     addTodo: (state, action: PayloadAction<Todo>) => {
-      state.todos.unshift(action.payload); // use backend response
+      state.todos.unshift(action.payload); 
     },
     updateTodo: (state, action: PayloadAction<Todo>) => {
       const index = state.todos.findIndex(t => t.id === action.payload.id);
