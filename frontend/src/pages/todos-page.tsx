@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -21,6 +21,9 @@ import {
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 
+import FocusTrap from 'focus-trap-react';
+import debounce from 'lodash.debounce';
+
 export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
   const projectId = Number(id);
@@ -31,19 +34,52 @@ export default function TodosPage() {
   const [projectName, setProjectName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Search states
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search input updates
+  // useCallback to avoid recreation on every render
+  const debouncedSetSearchTerm = useCallback(
+    debounce((value: string) => {
+      setDebouncedSearchTerm(value);
+    }, 300),
+    []
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    debouncedSetSearchTerm(e.target.value);
+  };
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:5000/api/projects/${projectId}`)
-      .then((res) => setProjectName(res.data.name))
-      .catch(() => setProjectName(`Project #${projectId}`));
+    setLoading(true);
+    setError(null);
 
-    axios
-      .get(`http://localhost:5000/api/todos/project/${projectId}`)
-      .then((res) => dispatch(setTodos(res.data)))
-      .catch((err) => console.error('❌ Failed to load todos:', err));
-  }, [projectId, dispatch]);
+    const fetchProject = axios.get(`http://localhost:5000/api/projects/${projectId}`);
+    const fetchTodos = axios.get(`http://localhost:5000/api/todos/project/${projectId}`);
+
+    Promise.all([fetchProject, fetchTodos])
+      .then(([projectRes, todosRes]) => {
+        setProjectName(projectRes.data.name);
+        dispatch(setTodos(todosRes.data));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('❌ Failed to load data:', err);
+        setError('Failed to load data. Please try again later.');
+        setLoading(false);
+      });
+
+    // Cleanup debounce on unmount
+    return () => {
+      debouncedSetSearchTerm.cancel();
+    };
+  }, [projectId, dispatch, debouncedSetSearchTerm]);
 
   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
     try {
@@ -101,17 +137,24 @@ export default function TodosPage() {
 
   const priorityOrder = { High: 1, Medium: 2, Low: 3 };
 
-  // First sort by priority
   const sortedTodos = todos.slice().sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
-  // Then apply search filtering
   const filteredTodos = sortedTodos.filter(todo =>
-    todo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (todo.description?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+    todo.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    (todo.description?.toLowerCase() ?? '').includes(debouncedSearchTerm.toLowerCase())
   );
 
+  if (loading) {
+    return <div className="text-center py-20">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-20 text-red-600">{error}</div>;
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8">
+    // Add inert effect by disabling pointer events and select when drawer open
+    <div className={`container mx-auto px-4 py-8 ${isFormOpen ? 'pointer-events-none select-none' : ''}`}>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           Todos for Project: {projectName || `#${projectId}`}
@@ -128,16 +171,15 @@ export default function TodosPage() {
         </Button>
       </div>
 
-      {/* 🔍 Search Input */}
       <Input
         type="text"
-        placeholder="Search todos..."
+        placeholder="Search by title or description..."
         value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+        onChange={handleSearchChange}
         className="mb-4 w-full max-w-md"
+        aria-label="Search todos"
       />
 
-      {/* 📝 Todo List */}
       <div className="mt-6">
         <TodoList
           todos={filteredTodos}
@@ -147,21 +189,22 @@ export default function TodosPage() {
         />
       </div>
 
-      {/* 📄 Drawer Form */}
-      <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DrawerContent position="right" className="max-w-md">
-          <DrawerHeader>
-            <DrawerTitle>{editingTodo ? 'Edit Todo' : 'New Todo'}</DrawerTitle>
-            <DrawerClose />
-          </DrawerHeader>
-          <DrawerBody>
-            <TodoForm
-              editingTodo={editingTodo}
-              onSubmit={handleAddOrUpdate}
-              onCancel={() => setIsFormOpen(false)}
-            />
-          </DrawerBody>
-        </DrawerContent>
+      <Drawer open={isFormOpen} onOpenChange={setIsFormOpen} modal={true}>
+        <FocusTrap active={isFormOpen}>
+          <DrawerContent position="right" className="max-w-md" tabIndex={-1}>
+            <DrawerHeader>
+              <DrawerTitle>{editingTodo ? 'Edit Todo' : 'New Todo'}</DrawerTitle>
+              <DrawerClose />
+            </DrawerHeader>
+            <DrawerBody>
+              <TodoForm
+                editingTodo={editingTodo}
+                onSubmit={handleAddOrUpdate}
+                onCancel={() => setIsFormOpen(false)}
+              />
+            </DrawerBody>
+          </DrawerContent>
+        </FocusTrap>
       </Drawer>
     </div>
   );
