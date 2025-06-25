@@ -1,158 +1,3 @@
-// import { useParams } from 'react-router-dom';
-// import { useState, useEffect } from 'react';
-// import axios from 'axios';
-
-// import type { Todo } from '@/types';
-// import { Button } from '@/components/ui/button';
-// import { Plus } from 'lucide-react';
-// import { TodoForm } from '@/components/todos/todo-form';
-// import { TodoList } from '@/components/todos/todo-list';
-
-// import {
-//   Drawer,
-//   DrawerContent,
-//   DrawerHeader,
-//   DrawerTitle,
-//   DrawerClose,
-//   DrawerBody,
-// } from '@/components/ui/drawer';
-
-// export default function TodosPage() {
-//   const { id } = useParams<{ id: string }>();
-//   const projectId = Number(id);
-
-//   const [projectName, setProjectName] = useState<string>('');
-//   const [todos, setTodos] = useState<Todo[]>([]);
-//   const [isFormOpen, setIsFormOpen] = useState(false);
-//   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-
-//   useEffect(() => {
-//     // Load project name
-//     axios
-//       .get(`http://localhost:5000/api/projects/${projectId}`)
-//       .then((res) => setProjectName(res.data.name))
-//       .catch((err) => {
-//         console.error('❌ Failed to load project:', err);
-//         setProjectName(`Project #${projectId}`);
-//       });
-
-//     // Load todos
-//     axios
-//       .get(`http://localhost:5000/api/todos/project/${projectId}`)
-//       .then((res) => setTodos(res.data))
-//       .catch((err) => console.error('❌ Failed to load todos:', err));
-//   }, [projectId]);
-
-//   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
-//     try {
-//       if (todo.id) {
-//         // Update existing todo, including priority
-//         const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
-//           title: todo.title,
-//           description: todo.description,
-//           completed: todo.completed,
-//           priority: todo.priority,
-//         });
-//         setTodos((prev) =>
-//           prev.map((t) => (t.id === todo.id ? res.data : t))
-//         );
-//       } else {
-//         // Create new todo, including priority with default
-//         const res = await axios.post(`http://localhost:5000/api/todos`, {
-//           title: todo.title,
-//           description: todo.description,
-//           project_id: projectId,
-//           priority: todo.priority || 'Medium',
-//         });
-//         setTodos((prev) => [res.data, ...prev]);
-//       }
-
-//       // Close drawer & reset editing todo
-//       setIsFormOpen(false);
-//       setEditingTodo(null);
-//     } catch (error) {
-//       console.error('❌ Error saving todo:', error);
-//     }
-//   };
-
-//   const handleToggle = async (id: number) => {
-//     const todo = todos.find((t) => t.id === id);
-//     if (!todo) return;
-
-//     try {
-//       const res = await axios.put(`http://localhost:5000/api/todos/${id}`, {
-//         completed: !todo.completed,
-//       });
-//       setTodos((prev) =>
-//         prev.map((t) => (t.id === id ? res.data : t))
-//       );
-//     } catch (error) {
-//       console.error('❌ Error toggling todo:', error);
-//     }
-//   };
-
-//   const handleEdit = (todo: Todo) => {
-//     setEditingTodo(todo);
-//     setIsFormOpen(true);
-//   };
-
-//   const handleDelete = async (id: number) => {
-//     try {
-//       await axios.delete(`http://localhost:5000/api/todos/${id}`);
-//       setTodos((prev) => prev.filter((t) => t.id !== id));
-//     } catch (error) {
-//       console.error('❌ Error deleting todo:', error);
-//     }
-//   };
-
-//   // Priority sorting: High -> Medium -> Low
-//   const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-//   const sortedTodos = todos.slice().sort((a, b) => {
-//     return priorityOrder[a.priority] - priorityOrder[b.priority];
-//   });
-
-//   return (
-//     <div className="container mx-auto px-4 py-8">
-//       <div className="flex justify-between items-center mb-6">
-//         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-//           Todos for Project: {projectName || `#${projectId}`}
-//         </h1>
-//         <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
-//           <Plus className="h-4 w-4" />
-//           New Todo
-//         </Button>
-//       </div>
-
-//       {/* Todo List */}
-//       <div className="mt-6">
-//         <TodoList
-//           todos={sortedTodos}
-//           onToggle={handleToggle}
-//           onEdit={handleEdit}
-//           onDelete={handleDelete}
-//         />
-//       </div>
-
-//       {/* Drawer for TodoForm */}
-//       <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-//         <DrawerContent position="right" className="max-w-md">
-//           <DrawerHeader>
-//             <DrawerTitle>{editingTodo ? 'Edit Todo' : 'New Todo'}</DrawerTitle>
-//             <DrawerClose />
-//           </DrawerHeader>
-//           <DrawerBody>
-//             <TodoForm
-//               editingTodo={editingTodo}
-//               onSubmit={handleAddOrUpdate}
-//               onCancel={() => setIsFormOpen(false)}
-//             />
-//           </DrawerBody>
-//         </DrawerContent>
-//       </Drawer>
-//     </div>
-//   );
-// }
-
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -174,6 +19,7 @@ import {
   DrawerClose,
   DrawerBody,
 } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
 
 export default function TodosPage() {
   const { id } = useParams<{ id: string }>();
@@ -185,6 +31,7 @@ export default function TodosPage() {
   const [projectName, setProjectName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     axios
@@ -201,7 +48,6 @@ export default function TodosPage() {
   const handleAddOrUpdate = async (todo: Partial<Todo>) => {
     try {
       if (todo.id) {
-        // Update todo
         const res = await axios.put(`http://localhost:5000/api/todos/${todo.id}`, {
           title: todo.title,
           description: todo.description,
@@ -210,7 +56,6 @@ export default function TodosPage() {
         });
         dispatch(updateTodo(res.data));
       } else {
-        // Add new todo
         const res = await axios.post(`http://localhost:5000/api/todos`, {
           title: todo.title,
           description: todo.description,
@@ -255,7 +100,15 @@ export default function TodosPage() {
   };
 
   const priorityOrder = { High: 1, Medium: 2, Low: 3 };
+
+  // First sort by priority
   const sortedTodos = todos.slice().sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+  // Then apply search filtering
+  const filteredTodos = sortedTodos.filter(todo =>
+    todo.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (todo.description?.toLowerCase() ?? '').includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -263,16 +116,38 @@ export default function TodosPage() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
-        <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
+        <Button
+          onClick={() => {
+            setIsFormOpen(true);
+            setEditingTodo(null);
+          }}
+          className="flex gap-2"
+        >
           <Plus className="h-4 w-4" />
           New Todo
         </Button>
       </div>
 
+      {/* 🔍 Search Input */}
+      <Input
+        type="text"
+        placeholder="Search todos..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4 w-full max-w-md"
+      />
+
+      {/* 📝 Todo List */}
       <div className="mt-6">
-        <TodoList todos={sortedTodos} onToggle={handleToggle} onEdit={handleEdit} onDelete={handleDelete} />
+        <TodoList
+          todos={filteredTodos}
+          onToggle={handleToggle}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </div>
 
+      {/* 📄 Drawer Form */}
       <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DrawerContent position="right" className="max-w-md">
           <DrawerHeader>
@@ -280,7 +155,11 @@ export default function TodosPage() {
             <DrawerClose />
           </DrawerHeader>
           <DrawerBody>
-            <TodoForm editingTodo={editingTodo} onSubmit={handleAddOrUpdate} onCancel={() => setIsFormOpen(false)} />
+            <TodoForm
+              editingTodo={editingTodo}
+              onSubmit={handleAddOrUpdate}
+              onCancel={() => setIsFormOpen(false)}
+            />
           </DrawerBody>
         </DrawerContent>
       </Drawer>
