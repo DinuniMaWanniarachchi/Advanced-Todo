@@ -1,4 +1,3 @@
-// src/components/projects/projectSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import type { Project } from '@/types';
 
@@ -29,8 +28,12 @@ const projectSlice = createSlice({
     deleteProject(state, action: PayloadAction<number>) {
       state.projects = state.projects.filter(p => p.id !== action.payload);
     },
+    clearProjects(state) {
+      state.projects = [];
+    },
   },
 });
 
-export const { setProjects, addProject, updateProject, deleteProject } = projectSlice.actions;
+// Export clearProjects too
+export const { setProjects, addProject, updateProject, deleteProject, clearProjects } = projectSlice.actions;
 export default projectSlice.reducer;

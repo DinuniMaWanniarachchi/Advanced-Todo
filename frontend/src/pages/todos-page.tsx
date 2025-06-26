@@ -1,5 +1,3 @@
-// src/components/todos/todos-page.tsx
-
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -8,7 +6,13 @@ import FocusTrap from 'focus-trap-react';
 
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/app/store';
-import { setTodos, addTodo, updateTodo, deleteTodo } from '@/components/todos/todoSlice';
+import {
+  setTodos,
+  addTodo,
+  updateTodo,
+  deleteTodo,
+  clearTodos,
+} from '@/components/todos/todoSlice';
 
 import type { Todo } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -55,6 +59,9 @@ export default function TodosPage() {
   };
 
   useEffect(() => {
+    console.log(`Project ID changed to ${projectId}, clearing todos and fetching new data.`);
+
+    dispatch(clearTodos());  // Clear todos immediately on project change
     setLoading(true);
     setError(null);
 
@@ -68,6 +75,7 @@ export default function TodosPage() {
         setProjectName(projectRes.data.name);
         dispatch(setTodos(todosRes));
         setLoading(false);
+        console.log(`Loaded ${todosRes.length} todos for project ${projectId}`);
       } catch (err) {
         console.error('❌ Failed to load data:', err);
         setError('Failed to load data. Please try again later.');
@@ -79,6 +87,8 @@ export default function TodosPage() {
 
     return () => {
       debouncedSetSearchTerm.cancel();
+      console.log('Cleaning up TodosPage, clearing todos in Redux.');
+      dispatch(clearTodos()); // Clear on unmount as well
     };
   }, [projectId, dispatch, debouncedSetSearchTerm]);
 
@@ -127,10 +137,8 @@ export default function TodosPage() {
     }
   };
 
-  // Priority order with string keys
   const priorityOrder: Record<string, number> = { High: 1, Medium: 2, Low: 3 };
 
-  // Sort todos safely by priority with fallback to 'Low'
   const sortedTodos = Array.isArray(todos)
     ? todos.slice().sort((a, b) => {
         const aPriority = a.priority && priorityOrder[a.priority] ? a.priority : 'Low';
@@ -139,7 +147,6 @@ export default function TodosPage() {
       })
     : [];
 
-  // Filter todos by debounced search term (case-insensitive)
   const filteredTodos = sortedTodos.filter((todo) =>
     todo.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
     (todo.description?.toLowerCase() ?? '').includes(debouncedSearchTerm.toLowerCase())

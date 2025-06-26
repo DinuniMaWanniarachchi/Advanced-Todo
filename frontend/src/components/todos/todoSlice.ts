@@ -28,8 +28,12 @@ const todoSlice = createSlice({
     deleteTodo: (state, action: PayloadAction<number>) => {
       state.todos = state.todos.filter(t => t.id !== action.payload);
     },
+    clearTodos: (state) => {
+      state.todos = [];
+    }
   },
 });
 
-export const { setTodos, addTodo, updateTodo, deleteTodo } = todoSlice.actions;
+// ✅ Export all actions including clearTodos
+export const { setTodos, addTodo, updateTodo, deleteTodo, clearTodos } = todoSlice.actions;
 export default todoSlice.reducer;
