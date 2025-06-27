@@ -14,8 +14,8 @@ export default function App() {
     <Router>
       <Suspense fallback={<div className="p-10 text-center text-gray-500">Loading...</div>}>
         <Routes>
-          <Route path="/" element={<ProjectsPage />} />
-          <Route path="/homepage" element={<HomePage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/projectpage" element={<ProjectsPage />} />
           <Route path="/project/:id/todos" element={<TodosPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />

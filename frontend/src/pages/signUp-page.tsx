@@ -9,14 +9,15 @@ export default function SignupPage() {
   const navigate = useNavigate();
 
   const handleSignup = async () => {
-    const res = await signup(username, email, password);
-    if (res.token) {
-      alert('Signup successful! Please login.');
-      navigate('/login');
-    } else {
-      alert(res.message || 'Signup failed');
-    }
-  };
+  const res = await signup(username, email, password);
+  if (res.message === 'User created successfully') {
+    alert('Signup successful! Please login.');
+    navigate('/login');
+  } else {
+    alert(res.message || 'Signup failed');
+  }
+};
+
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 shadow-lg bg-white dark:bg-gray-900 rounded-lg">
