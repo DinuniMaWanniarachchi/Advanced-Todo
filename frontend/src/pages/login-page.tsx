@@ -13,7 +13,7 @@ export default function LoginPage() {
     const res = await login(email, password);
     if (res.token) {
       loginUser(res.user, res.token);
-      navigate('/projects'); // redirect to protected page
+      navigate('/projectpage'); // redirect to protected page
     } else {
       alert(res.message || 'Login failed');
     }
