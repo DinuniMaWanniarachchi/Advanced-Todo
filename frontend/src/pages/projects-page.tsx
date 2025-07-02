@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { ProjectList } from '@/components/projects/project-list';
 import { ProjectForm } from '@/components/projects/project-form';
-import { projectApi } from '@/lib/api';
+import { projectsApiService } from '@/api/projects.api.service'; // ✅ updated import
 import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function ProjectsPage() {
@@ -14,19 +14,22 @@ export default function ProjectsPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [error, setError] = useState('');
 
+  // ✅ Load projects on component mount
   useEffect(() => {
     loadProjects();
   }, []);
 
+  // ✅ Fetch projects with token
   const loadProjects = async () => {
     try {
       setIsLoading(true);
       setError('');
-      const data = await projectApi.getAll();
+      const data = await projectsApiService.getAll(); // ✅ this includes auth headers
       setProjects(data);
-    } catch (error) {
-      console.error('Error loading projects:', error);
-      setError('Failed to load projects. Please try again.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.error('Error loading projects:', err);
+      setError(err?.response?.data?.error || err.message || 'Failed to load projects');
     } finally {
       setIsLoading(false);
     }
