@@ -19,7 +19,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    console.log('Decoded JWT:', decoded); // Debug log
     if (!decoded.id) {
       res.status(401).json({ message: 'Invalid token payload' });
       return;
