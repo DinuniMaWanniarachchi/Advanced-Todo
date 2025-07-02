@@ -68,7 +68,11 @@ export default function TodosPage() {
     const fetchData = async () => {
       try {
         const [projectRes, todosRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/projects/${projectId}`),
+          axios.get(`http://localhost:5000/api/projects/${projectId}`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }),
           todosApiService.getByProject(projectId),
         ]);
 
@@ -161,7 +165,13 @@ export default function TodosPage() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
           Todos for Project: {projectName || `#${projectId}`}
         </h1>
-        <Button onClick={() => { setIsFormOpen(true); setEditingTodo(null); }} className="flex gap-2">
+        <Button
+          onClick={() => {
+            setIsFormOpen(true);
+            setEditingTodo(null);
+          }}
+          className="flex gap-2"
+        >
           <Plus className="h-4 w-4" />
           New Todo
         </Button>
@@ -183,6 +193,20 @@ export default function TodosPage() {
           onEdit={handleEdit}
           onDelete={handleDelete}
         />
+
+        {/* Added Add Todo Button below the list */}
+        <div className="flex justify-end mt-4">
+          {/* <Button
+            onClick={() => {
+              setIsFormOpen(true);
+              setEditingTodo(null);
+            }}
+            className="flex gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Todo
+          </Button> */}
+        </div>
       </div>
 
       <Drawer open={isFormOpen} onOpenChange={setIsFormOpen} modal={true}>

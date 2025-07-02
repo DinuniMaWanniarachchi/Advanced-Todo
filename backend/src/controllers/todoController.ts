@@ -5,6 +5,19 @@ import { CreateTodoRequest, UpdateTodoRequest } from '../types';
 export const getTodosByProjectId = async (req: Request, res: Response): Promise<void> => {
   try {
     const { projectId } = req.params;
+    const userId = req.user?.id;
+
+    // Check if the project belongs to the authenticated user
+    const projectResult = await pool.query(
+      'SELECT * FROM projects WHERE id = $1 AND user_id = $2',
+      [projectId, userId]
+    );
+    if (projectResult.rows.length === 0) {
+      res.status(403).json({ error: 'Forbidden: You do not have access to this project.' });
+      return;
+    }
+
+    // Fetch todos for the project
     const result = await pool.query(
       'SELECT * FROM todos WHERE project_id = $1 ORDER BY created_at DESC',
       [projectId]
