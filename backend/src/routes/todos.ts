@@ -6,8 +6,12 @@ import {
   updateTodo,
   deleteTodo
 } from '../controllers/todoController';
+import { authMiddleware } from '../middleware/authMiddleware'; // Add this import
 
 const router = express.Router();
+
+// Protect all routes with authMiddleware
+router.use(authMiddleware);
 
 router.get('/project/:projectId', getTodosByProjectId);
 router.get('/:id', getTodoById);
